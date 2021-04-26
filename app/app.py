@@ -1,4 +1,4 @@
-#!/usr/bin/env pythonimport logging
+#!/usr/bin/env python
 
 import logging, json
 from flask import Flask, session
@@ -10,9 +10,9 @@ app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
 @app.route('/')
-def hello():
-  logging.debug('hello() called')
-  return 'Hello, World!'
+def root():
+  logging.debug('root() called')
+  return 'Hello!'
 
 @app.route('/counter', methods = ['GET', 'POST'])
 def counter():
