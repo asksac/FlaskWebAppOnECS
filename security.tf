@@ -42,6 +42,8 @@ resource "aws_security_group" "alb_sg" {
   tags                    = local.common_tags
 }
 
+# ECS Execution Role - grants permissions to ECS to pull images and write CW logs 
+
 resource "aws_iam_role" "ecs_exec_role" {
   name                    = "${var.app_shortcode}-ecs-exec-role"
   assume_role_policy      = <<EOF
@@ -67,7 +69,7 @@ EOF
 
 resource "aws_iam_policy" "ecs_exec_role_permissions" {
   name                    = "${var.app_shortcode}-ecs-role-permissions"
-  description             = "Provides ECS tasks access to AWS services"
+  description             = "Provides ECS access to AWS services"
 
   policy                  = <<EOF
 {
@@ -92,7 +94,60 @@ resource "aws_iam_policy" "ecs_exec_role_permissions" {
 EOF
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_exec_role_policy" {
+resource "aws_iam_role_policy_attachment" "ecs_exec_role_policy_attachment" {
   role                    = aws_iam_role.ecs_exec_role.name
   policy_arn              = aws_iam_policy.ecs_exec_role_permissions.arn
+}
+
+# Task IAM Role - grants permissions to tasks to access AWS services such as SSM 
+
+resource "aws_iam_role" "tasks_iam_role" {
+  name                    = "${var.app_shortcode}-tasks-iam-role"
+  assume_role_policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": [
+          "ecs-tasks.amazonaws.com"
+        ]
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+
+  tags                    = local.common_tags
+}
+
+resource "aws_iam_policy" "tasks_iam_role_permissions" {
+  name                    = "${var.app_shortcode}-tasks-iam-permissions"
+  description             = "Provides tasks access to other AWS services"
+
+  policy                  = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel"        
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "tasks_iam_role_policy_attachment" {
+  role                    = aws_iam_role.tasks_iam_role.name
+  policy_arn              = aws_iam_policy.tasks_iam_role_permissions.arn
 }
