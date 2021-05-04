@@ -40,11 +40,13 @@ if __name__ == "__main__":
   )
   cliparser.add_argument('--max-sessions', 
     required=False, 
+    type=int, 
     default=10, 
     help='maximum number of concurrent sessions to launch (default is 10)'
   )
   cliparser.add_argument('--max-iterations',  
     required=False, 
+    type=int, 
     default=100, 
     help='maximum number of test iterations of run (default is 100)'
   )
