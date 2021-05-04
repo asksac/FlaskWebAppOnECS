@@ -1,5 +1,10 @@
 resource "aws_ecs_cluster" "main" {
   name                            = "${var.app_shortcode}-ecs-cluster"
+  setting {
+    name                          = "containerInsights"
+    value                         = "enabled"
+  }
+
   tags                            = local.common_tags
 }
 
@@ -15,12 +20,17 @@ resource "aws_ecs_task_definition" "ecs_task" {
   cpu                             = "1024"
   memory                          = "2048"
   execution_role_arn              = aws_iam_role.ecs_exec_role.arn
+  task_role_arn                   = aws_iam_role.tasks_iam_role.arn
 
   container_definitions           = jsonencode([
     {
       name =  "${var.app_shortcode}-webapp"
       image = local.ecr_url_tag
       networkMode = "awsvpc" 
+      essential = true 
+      linuxParameters = {
+        initProcessEnabled = true
+      }
       portMappings = [
         { 
           containerPort = var.webapp_listen_port 
@@ -55,6 +65,8 @@ resource "aws_ecs_service" "main" {
   deployment_maximum_percent          = 200
   deployment_minimum_healthy_percent  = 50
   health_check_grace_period_seconds   = 15
+
+  enable_execute_command          = true
 
   network_configuration {
     security_groups               = [ aws_security_group.ecs_sg.id ]
